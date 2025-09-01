@@ -1,19 +1,20 @@
+// controllers/authController.js
 const User = require('../models/user');
+// ADD THESE LINES BACK
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-//    Register a new user (host or guest)
 exports.registerUser = async (req, res) => {
+    // Check what data you're receiving
+    console.log('Register request body received:', req.body);
     const { username, email, password, userType } = req.body;
     try {
         let user = await User.findOne({ email });
         if (user) {
             return res.status(400).json({ msg: 'User already exists' });
         }
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        user = new User({ username, email, password: hashedPassword, userType });
-        await user.save();
+        user = new User({ username, email, password, userType });
+        await user.save(); // The pre-save middleware will run here
         res.status(201).json({ msg: 'User registered successfully' });
     } catch (err) {
         console.error(err.message);
@@ -21,17 +22,23 @@ exports.registerUser = async (req, res) => {
     }
 };
 
-
-//  Login a user
-
 exports.loginUser = async (req, res) => {
+    // Check what data you're receiving for login
+    console.log('Login request body received:', req.body);
     const { email, password } = req.body;
     try {
         let user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
+        
+        // Log the passwords before comparison
+        console.log('Password from login request:', password);
+        console.log('Hashed password from database:', user.password);
+
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log('Is password a match?', isMatch);
+
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid credentials' });
         }
